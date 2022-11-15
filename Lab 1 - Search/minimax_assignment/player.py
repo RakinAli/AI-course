@@ -104,7 +104,7 @@ class PlayerControllerMinimax(PlayerController):
         if node.depth == 2 or len(state.fish_positions) == 0:
             return self.evaluate_score(state)
 
-        # Min is playing which is us (the player)
+        # Min is playing which is us (copying the opponents move) 
         if state.player:
             smallest = 1000000
             children = node.compute_and_get_children()
@@ -115,7 +115,7 @@ class PlayerControllerMinimax(PlayerController):
                 if beta <= alpha:
                     break
             return smallest
-        # Max is playing which is the opponent
+        # Max is playing which is us maximating our score
         else:
             largest = -1000000
             children = node.compute_and_get_children()
