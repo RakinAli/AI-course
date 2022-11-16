@@ -81,7 +81,7 @@ class PlayerControllerMinimax(PlayerController):
         # https://www.youtube.com/watch?v=l-hh51ncgDI min 8:52
         state = node.state
         # Check for terminal state --> NOte: This can be optimised later
-        if len(state.fish_positions) == 0 or len(state.fish_scores) == 0 or node.depth == 3:
+        if len(state.fish_positions) == 0 or len(state.fish_scores) == 0 or node.depth == 2:
             return self.heuristic(state)
         # Check for player 0 --> Maximizer
         if state.player == 0:
@@ -91,6 +91,7 @@ class PlayerControllerMinimax(PlayerController):
                     max_points, self.find_best_move(child, alpha, beta))
                 alpha = max(alpha, max_points)
                 if beta <= alpha:
+                    print("Pruning")
                     break
             return max_points
         # Check for player 1 --> Minimizer
@@ -101,6 +102,7 @@ class PlayerControllerMinimax(PlayerController):
                     min_points, self.find_best_move(child, alpha, beta))
                 beta = min(beta, min_points)
                 if beta <= alpha:
+
                     break
             return min_points
 
@@ -111,18 +113,40 @@ class PlayerControllerMinimax(PlayerController):
         diff = max_points - min_points
 
         if (state.player == 0):
-            return diff - self.nearest_fish(0, state)
+            return diff - self.best_fish(0, state)
         else:
-            return diff + self.nearest_fish(1, state)
+            return diff + self.best_fish(1, state)
 
-    # Improve so that we find the fish that give the highest score
+    def best_fish(self, player, state):
+        """
+        Let's say you have two fishes. Fish 1 is at distance 5 from hook and gives 10 points 
+        Fish 2 is at distance 3 from hook and gives 1 points. 
+        Priority should be given to fish 1 because because score/distance is higher
+        """
+        hook_position = state.hook_positions[player]
+        value_per_distance = 0
+        index = 0
+        for fish in state.fish_positions.values():
+            if list(state.fish_scores.values())[index]/self.distance(fish, hook_position) > value_per_distance:
+                value_per_distance = list(state.fish_scores.values())[index]/self.distance(fish, hook_position)
+                if hook_position == fish.positio:
+                    value_per_distance = 100000
+            index = index + 1
+        return value_per_distance
+
+    # Finding the best nearest fish for the player
+
     def nearest_fish(self, player, state):
         hook_position = state.hook_positions[player]
         clostest_fish = math.inf
         # Iterate all fish positions and find the nearest fish
         for fish in state.fish_positions.values():
+            print(state.fish_scores.values())
+            print(state.fish_positions.values())
             if self.distance(fish, hook_position) < clostest_fish:
                 clostest_fish = self.distance(fish, hook_position)
+                if clostest_fish == 0:
+                    print("----------Fish is caught----------")
         return clostest_fish
 
     def distance(self, pos1, pos2):
