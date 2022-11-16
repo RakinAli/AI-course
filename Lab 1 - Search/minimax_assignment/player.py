@@ -2,7 +2,6 @@
 import random
 import math
 
-
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
 from fishing_game_core.shared import ACTION_TO_STR
@@ -67,93 +66,64 @@ class PlayerControllerMinimax(PlayerController):
         # NOTE: Don't forget to initialize the children of the current node
         #       with its compute_and_get_children() method!
 
-        # Gives us the 4 possible moves for the player
-        children = initial_tree_node.compute_and_get_children()
-        score = -1000000
-        move = 0
-        for child in children:
-            possible_scores = self.minimax_alpha_beta(child, -1000000, 1000000)
-            if possible_scores > score:
-                score = possible_scores
-                move = child.move
-        return ACTION_TO_STR[move]
-    """
-    Minimax algorithm från youtube
-         if depth == 0 or node is a terminal node:
-                return the heuristic value of node
-        if maximizingPlayer:
-            maxEval = -infinity
-            for child in node:
-                eval = minimax(child, depth - 1, alpha, beta, False)
-                maxEval = max(maxEval, eval)
-                alpha = max(alpha, eval)
-                if beta <= alpha:
-                    break
-            return maxEval
-        else:
-            minEval = +infinity
-            for child in node:
-                eval = minimax(child, depth - 1, alpha, beta, True)
-                minEval = min(minEval, eval)
-            return minEval
-    """
+        five_moves = initial_tree_node.compute_and_get_children()
+        high_score = -100000
+        best_move = 0
+        for child in five_moves:
+            points = self.find_best_move(child, -100000, 100000)
+            if points > high_score:
+                high_score = points
+                best_move = child.move
+        return ACTION_TO_STR[best_move]
 
-    def minimax_alpha_beta(self, node, alpha, beta,):
+    # Alpha beta pruning algorithm to find the best move
+    def find_best_move(self, node, alpha, beta):
+        # https://www.youtube.com/watch?v=l-hh51ncgDI min 8:52
         state = node.state
-        # We found the last node or the game is over
-        if node.depth == 2 or len(state.fish_positions) == 0:
-            return self.evaluate_score(state)
-
-        # Min is playing which is us (the player)
-        if state.player:
-            smallest = 1000000
-            children = node.compute_and_get_children()
-            for child in children:
-                evaluate = self.minimax_alpha_beta(child, alpha, beta)
-                smallest = min(smallest, evaluate)
-                beta = min(beta, smallest)
+        # Check for terminal state --> NOte: This can be optimised later
+        if len(state.fish_positions) == 0 or len(state.fish_scores) == 0 or node.depth == 3:
+            return self.heuristic(state)
+        # Check for player 0 --> Maximizer
+        if state.player == 0:
+            max_points = -math.inf
+            for child in node.compute_and_get_children():
+                max_points = max(
+                    max_points, self.find_best_move(child, alpha, beta))
+                alpha = max(alpha, max_points)
                 if beta <= alpha:
                     break
-            return smallest
-        # Max is playing which is the opponent
+            return max_points
+        # Check for player 1 --> Minimizer
         else:
-            largest = -1000000
-            children = node.compute_and_get_children()
-            for child in children:
-                evaluate = self.minimax_alpha_beta(child, alpha, beta)
-                largest = max(largest, evaluate)
-                alpha = max(alpha, largest)
+            min_points = +math.inf
+            for child in node.compute_and_get_children():
+                min_points = min(
+                    min_points, self.find_best_move(child, alpha, beta))
+                beta = min(beta, min_points)
                 if beta <= alpha:
                     break
-            return largest
+            return min_points
 
-    def evaluate_score(self, state):
-        # opponents score
-        max_score = state.player_scores[0]
-        # our score
-        min_score = state.player_scores[1]
-        diff = max_score - min_score
-        # Min is playing which is us (the player
-        if state.player:
-            diff = diff + self.nearest_fish(state.player, state)
-            return diff
-        # Max is playing which is the opponent
+    def heuristic(self, state):
+        # Simple heuristic function to calculate the points of the state
+        max_points = state.player_scores[0]
+        min_points = state.player_scores[1]
+        diff = max_points - min_points
+
+        if (state.player == 0):
+            return diff - self.nearest_fish(0, state)
         else:
-            diff = diff - self.nearest_fish(state.player, state)
-            return diff
+            return diff + self.nearest_fish(1, state)
 
+    # Improve so that we find the fish that give the highest score
     def nearest_fish(self, player, state):
-        # 1 - > min  or 0 -> max
-        hook_pos = state.hook_positions[player]
-        distance = 1000000
-        # Iterate all fish positions and get the smallest distance
+        hook_position = state.hook_positions[player]
+        clostest_fish = math.inf
+        # Iterate all fish positions and find the nearest fish
         for fish in state.fish_positions.values():
-            dist = self.distance(fish, hook_pos)
-            if dist < distance:
-                distance = dist
-        return distance
+            if self.distance(fish, hook_position) < clostest_fish:
+                clostest_fish = self.distance(fish, hook_position)
+        return clostest_fish
 
-    def distance(self, fish_positions, hook_positions):
-        answer = math.sqrt(
-            (fish_positions[0]-hook_positions[0])**2 + (fish_positions[1]-hook_positions[1])**2)
-        return answer
+    def distance(self, pos1, pos2):
+        return math.sqrt((pos1[0]-pos2[0])**2 + (pos1[1]-pos2[1])**2)
