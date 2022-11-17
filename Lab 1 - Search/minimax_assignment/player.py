@@ -80,7 +80,7 @@ class PlayerControllerMinimax(PlayerController):
     def find_best_move(self, node, alpha, beta):
         # https://www.youtube.com/watch?v=l-hh51ncgDI min 8:52
         state = node.state
-        # Check for terminal state --> NOte: This can be optimised later
+        # Check for terminal state --> NOte: This can be optimised later by increasing the depth of the tree
         if len(state.fish_positions) == 0 or len(state.fish_scores) == 0 or node.depth == 2:
             return self.heuristic(state)
         # Check for player 0 --> Maximizer
@@ -112,10 +112,11 @@ class PlayerControllerMinimax(PlayerController):
         min_points = state.player_scores[1]
         diff = max_points - min_points
 
+        # Maximizer
         if (state.player == 0):
-            return diff - self.best_fish(0, state)
+            return diff + self.best_fish(0, state)
         else:
-            return diff + self.best_fish(1, state)
+            return diff - self.best_fish(1, state)
 
     def best_fish(self, player, state):
         """
@@ -125,14 +126,29 @@ class PlayerControllerMinimax(PlayerController):
         """
         hook_position = state.hook_positions[player]
         value_per_distance = 0
-        index = 0
-        for fish in state.fish_positions.values():
-            if list(state.fish_scores.values())[index]/self.distance(fish, hook_position) > value_per_distance:
-                value_per_distance = list(state.fish_scores.values())[index]/self.distance(fish, hook_position)
-                if hook_position == fish.positio:
-                    value_per_distance = 100000
-            index = index + 1
+        value = 0
+        for fish in state.fish_positions.keys():
+            # Get the fish score
+            fish_score = state.fish_scores[fish]
+            
+            # Get the fish position
+            fish_position = state.fish_positions[fish]
+            
+            # Calculate the distance between the fish and the hook
+            distance = self.distance(fish_position, hook_position)
+            
+            # Calculate the value per distance
+            if distance != 0:
+                value = fish_score / distance
+            else:
+                value_per_distance = fish_score
+
+            # Check if the value per distance is higher than the previous value
+            if value > value_per_distance:
+                value_per_distance = value
+                
         return value_per_distance
+    
 
     # Finding the best nearest fish for the player
 
