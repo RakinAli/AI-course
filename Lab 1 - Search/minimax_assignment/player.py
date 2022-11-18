@@ -86,7 +86,6 @@ class PlayerControllerMinimax(PlayerController):
                     depth += 1
             except:
                 timeout = True
-                print("----------", depth, "----------")
         return ACTION_TO_STR[best_move]
 
     # A move is illegal is both of the players have the same x positon
@@ -97,16 +96,16 @@ class PlayerControllerMinimax(PlayerController):
         return False
 
     # Alpha beta pruning algorithm to find the best move
-    def find_best_move(self, node, alpha, beta,start_time,depth):
+    def find_best_move(self, node, alpha, beta, start_time, depth):
         state = node.state
         children = node.compute_and_get_children()
         # Terminal states
-        if len(state.fish_positions) == 0 or len(state.fish_scores) == 0 or len(children)==0 or depth == 0 and not self.illegal_move(node):
+        if len(state.fish_positions) == 0 or len(state.fish_scores) == 0 or depth == 0 and not self.illegal_move(node):
             return self.heuristic(state)
-        
+
         if time.time() - start_time > 0.055:
             raise TimeoutError
-        
+
         # https://www.youtube.com/watch?v=l-hh51ncgDI min 8:52
         # Check for player 0 --> Maximizer
         if state.player == 0:
@@ -116,7 +115,7 @@ class PlayerControllerMinimax(PlayerController):
                     continue
                 else:
                     max_points = max(
-                        max_points, self.find_best_move(child, alpha, beta,start_time,depth-1))
+                        max_points, self.find_best_move(child, alpha, beta, start_time, depth-1))
                 alpha = max(alpha, max_points)
                 if beta <= alpha:
                     break
@@ -126,7 +125,7 @@ class PlayerControllerMinimax(PlayerController):
             min_points = +math.inf
             for child in node.compute_and_get_children():
                 min_points = min(
-                    min_points, self.find_best_move(child, alpha, beta,start_time,depth-1))
+                    min_points, self.find_best_move(child, alpha, beta, start_time, depth-1))
                 beta = min(beta, min_points)
                 if beta <= alpha:
                     break
@@ -142,7 +141,7 @@ class PlayerControllerMinimax(PlayerController):
         if (state.player == 0):
             return diff + self.best_fish(0, state)
         else:
-        # Minimizer 
+            # Minimizer
             return diff - self.best_fish(1, state)
 
     # Calculate how much a move is worth based on the fish near the hook
