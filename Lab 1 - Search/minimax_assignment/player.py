@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import random
 import math
+import time
 
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
@@ -66,32 +66,59 @@ class PlayerControllerMinimax(PlayerController):
         # NOTE: Don't forget to initialize the children of the current node
         #       with its compute_and_get_children() method!
 
+        start_time = time.time()
         five_moves = initial_tree_node.compute_and_get_children()
         high_score = -100000
         best_move = 0
-        for child in five_moves:
-            points = self.find_best_move(child, -100000, 100000)
-            if points > high_score:
-                high_score = points
-                best_move = child.move
+        timeout = False
+        depth = 0
+        while not timeout:
+            try:
+                for child in five_moves:
+                    if (self.illegal_move(child)):
+                        continue
+                    else:
+                        points = self.find_best_move(
+                            child, -100000, 100000, start_time, depth)
+                    if points > high_score:
+                        high_score = points
+                        best_move = child.move
+                    depth += 1
+            except:
+                timeout = True
+                print("----------", depth, "----------")
         return ACTION_TO_STR[best_move]
 
-    # Alpha beta pruning algorithm to find the best move
-    def find_best_move(self, node, alpha, beta):
-        # https://www.youtube.com/watch?v=l-hh51ncgDI min 8:52
+    # A move is illegal is both of the players have the same x positon
+    def illegal_move(self, node):
         state = node.state
-        # Check for terminal state --> NOte: This can be optimised later by increasing the depth of the tree
-        if len(state.fish_positions) == 0 or len(state.fish_scores) == 0 or node.depth == 2:
+        if state.hook_positions[0][0] == state.hook_positions[1][0]:
+            return True
+        return False
+
+    # Alpha beta pruning algorithm to find the best move
+    def find_best_move(self, node, alpha, beta,start_time,depth):
+        state = node.state
+        children = node.compute_and_get_children()
+        # Terminal states
+        if len(state.fish_positions) == 0 or len(state.fish_scores) == 0 or len(children)==0 or depth == 0 and not self.illegal_move(node):
             return self.heuristic(state)
+        
+        if time.time() - start_time > 0.055:
+            raise TimeoutError
+        
+        # https://www.youtube.com/watch?v=l-hh51ncgDI min 8:52
         # Check for player 0 --> Maximizer
         if state.player == 0:
             max_points = -math.inf
-            for child in node.compute_and_get_children():
-                max_points = max(
-                    max_points, self.find_best_move(child, alpha, beta))
+            for child in children:
+                if self.illegal_move(child):
+                    continue
+                else:
+                    max_points = max(
+                        max_points, self.find_best_move(child, alpha, beta,start_time,depth-1))
                 alpha = max(alpha, max_points)
                 if beta <= alpha:
-                    print("Pruning")
                     break
             return max_points
         # Check for player 1 --> Minimizer
@@ -99,10 +126,9 @@ class PlayerControllerMinimax(PlayerController):
             min_points = +math.inf
             for child in node.compute_and_get_children():
                 min_points = min(
-                    min_points, self.find_best_move(child, alpha, beta))
+                    min_points, self.find_best_move(child, alpha, beta,start_time,depth-1))
                 beta = min(beta, min_points)
                 if beta <= alpha:
-
                     break
             return min_points
 
@@ -116,13 +142,16 @@ class PlayerControllerMinimax(PlayerController):
         if (state.player == 0):
             return diff + self.best_fish(0, state)
         else:
+        # Minimizer 
             return diff - self.best_fish(1, state)
 
+    # Calculate how much a move is worth based on the fish near the hook
     def best_fish(self, player, state):
         """
-        Let's say you have two fishes. Fish 1 is at distance 5 from hook and gives 10 points 
-        Fish 2 is at distance 3 from hook and gives 1 points. 
-        Priority should be given to fish 1 because because score/distance is higher
+        @Param player: 0 or 1
+        @Param state: state of the game
+        @Return: the best points/distance ratio 
+        Gives us the best position to catch fishes 
         """
         hook_position = state.hook_positions[player]
         value_per_distance = 0
@@ -130,13 +159,13 @@ class PlayerControllerMinimax(PlayerController):
         for fish in state.fish_positions.keys():
             # Get the fish score
             fish_score = state.fish_scores[fish]
-            
+
             # Get the fish position
             fish_position = state.fish_positions[fish]
-            
+
             # Calculate the distance between the fish and the hook
             distance = self.distance(fish_position, hook_position)
-            
+
             # Calculate the value per distance
             if distance != 0:
                 value = fish_score / distance
@@ -146,23 +175,17 @@ class PlayerControllerMinimax(PlayerController):
             # Check if the value per distance is higher than the previous value
             if value > value_per_distance:
                 value_per_distance = value
-                
         return value_per_distance
-    
 
     # Finding the best nearest fish for the player
-
     def nearest_fish(self, player, state):
         hook_position = state.hook_positions[player]
         clostest_fish = math.inf
         # Iterate all fish positions and find the nearest fish
         for fish in state.fish_positions.values():
-            print(state.fish_scores.values())
-            print(state.fish_positions.values())
+
             if self.distance(fish, hook_position) < clostest_fish:
                 clostest_fish = self.distance(fish, hook_position)
-                if clostest_fish == 0:
-                    print("----------Fish is caught----------")
         return clostest_fish
 
     def distance(self, pos1, pos2):
