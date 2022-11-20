@@ -81,7 +81,7 @@ class PlayerControllerMinimax(PlayerController):
         best_move = 0
         highest_score = -math.inf
         for child in children:
-            score = self.alphabeta(child, -math.inf, math.inf, 0)
+            score = self.alphabeta(child, -math.inf, math.inf, 2)
             if (score > highest_score):
                 highest_score = score
                 best_move = child.move
@@ -107,7 +107,7 @@ class PlayerControllerMinimax(PlayerController):
         else:
             score = math.inf
             for child in node.children:
-                score = min(score, self.alphabeta(child, alpha, beta, depth = depth-1))
+                score = min(score, self.alphabeta(child, alpha, beta, depth-1))
                 beta = min(beta, score)
                 if beta <= alpha:
                     break
@@ -119,15 +119,8 @@ class PlayerControllerMinimax(PlayerController):
         @param node: game tree node
         @return: score of the state
         """
-        diff = node.state.player_scores[0] - node.state.player_scores[1]
-
-        # Get the best fishes
-        best_fishes = self.best_fishes(node)
-
-        return (diff + best_fishes)
-
-    def best_fishes(self, node):
         # Different
+        diff = node.state.player_scores[0] - node.state.player_scores[1]
         max_score = -math.inf
         min_score = -math.inf
         max_temp = 0
@@ -149,7 +142,7 @@ class PlayerControllerMinimax(PlayerController):
 
             # Get the value per distance for the fishes for MAX player
             if distance_max == 0:
-                max_temp = fish_score * 2
+                max_temp = fish_score * 10
             else:
                 max_temp = fish_score / distance_max
 
@@ -167,10 +160,9 @@ class PlayerControllerMinimax(PlayerController):
 
         # Player with the best score wins
         # SE HÄR
-        return (max_score-min_score)
+        return diff + (max_score-min_score)
 
     # Get the distance between the fish and the players
-
     def manhattan_distance(self, pos1, pos2):
         """
         @param pos1: position of the fish
