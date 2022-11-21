@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import random
 import math
+import time
 
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
@@ -80,29 +81,40 @@ class PlayerControllerMinimax(PlayerController):
         children = node.compute_and_get_children()
         best_move = 0
         highest_score = -math.inf
-        for child in children:
-            score = self.alphabeta(child, -math.inf, math.inf, 2)
-            if (score > highest_score):
-                highest_score = score
-                best_move = child.move
+        timeout = False
+        start_time = time.time()
+        depth = 0
+        while not timeout:
+            try:
+                for child in children:
+                    score = self.alphabeta(
+                        child, -math.inf, math.inf, depth, start_time)
+                    if (score > highest_score):
+                        highest_score = score
+                        best_move = child.move
+                depth += 1
+            except:
+                timeout = True
         return best_move
 
-    def alphabeta(self, node, alpha, beta, depth):
+    def alphabeta(self, node, alpha, beta, depth, start_time):
         score = 0
-
         new_children = node.compute_and_get_children()
-        
         # Terminal node
         if depth == 0 or len(node.children) == 0:
             score = self.heuristics(node)
             return score
+
+        elif time.time() - start_time > 0.055:
+            raise TimeoutError
 
         state = node.state
         # Maximizing player
         if state.player == 0:
             score = -math.inf
             for child in new_children:
-                score = max(score, self.alphabeta(child, alpha, beta, depth-1))
+                score = max(score, self.alphabeta(
+                    child, alpha, beta, depth-1, start_time))
                 alpha = max(alpha, score)
                 if beta <= alpha:
                     break
@@ -110,7 +122,8 @@ class PlayerControllerMinimax(PlayerController):
         else:
             score = math.inf
             for child in new_children:
-                score = min(score, self.alphabeta(child, alpha, beta, depth-1))
+                score = min(score, self.alphabeta(
+                    child, alpha, beta, depth-1, start_time))
                 beta = min(beta, score)
                 if beta <= alpha:
                     break
