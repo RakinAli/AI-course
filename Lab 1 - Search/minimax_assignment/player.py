@@ -105,7 +105,7 @@ class PlayerControllerMinimax(PlayerController):
             score = self.heuristics(node)
             return score
 
-        elif time.time() - start_time > 0.055:
+        elif time.time() - start_time > 0.05:
             raise TimeoutError
 
         state = node.state
