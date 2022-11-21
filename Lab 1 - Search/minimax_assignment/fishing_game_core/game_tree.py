@@ -17,7 +17,7 @@ class State:
         # The positions of the two hooks, provided as (x,y) coordinate tuples.
         self.hook_positions = {}
         # The positions of the uncaught fishes, provided as (x,y) coordinate tuples.
-        self.fish_positions = {}
+        self.fish_positions = {} 
         # The score values associated with each fish index.
         self.fish_scores = {}
 
