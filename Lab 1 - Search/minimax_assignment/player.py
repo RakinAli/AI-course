@@ -89,6 +89,9 @@ class PlayerControllerMinimax(PlayerController):
 
     def alphabeta(self, node, alpha, beta, depth):
         score = 0
+
+        new_children = node.compute_and_get_children()
+        
         # Terminal node
         if depth == 0 or len(node.children) == 0:
             score = self.heuristics(node)
@@ -98,7 +101,7 @@ class PlayerControllerMinimax(PlayerController):
         # Maximizing player
         if state.player == 0:
             score = -math.inf
-            for child in node.children:
+            for child in new_children:
                 score = max(score, self.alphabeta(child, alpha, beta, depth-1))
                 alpha = max(alpha, score)
                 if beta <= alpha:
@@ -106,7 +109,7 @@ class PlayerControllerMinimax(PlayerController):
         # Minimizing player
         else:
             score = math.inf
-            for child in node.children:
+            for child in new_children:
                 score = min(score, self.alphabeta(child, alpha, beta, depth-1))
                 beta = min(beta, score)
                 if beta <= alpha:
@@ -142,7 +145,7 @@ class PlayerControllerMinimax(PlayerController):
 
             # Get the value per distance for the fishes for MAX player
             if distance_max == 0:
-                max_temp = fish_score * 10
+                max_temp = fish_score * 2
             else:
                 max_temp = fish_score / distance_max
 
