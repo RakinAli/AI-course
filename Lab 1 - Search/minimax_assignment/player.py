@@ -84,48 +84,59 @@ class PlayerControllerMinimax(PlayerController):
         timeout = False
         start_time = time.time()
         depth = 0
-        hash_table = dict()
+        seen_moves = dict()
+
         while not timeout:
             try:
                 for child in children:
                     score = self.alphabeta(
-                        child, -math.inf, math.inf, depth, start_time, hash_table)
+                        child, -math.inf, math.inf, depth, start_time, seen_moves)
                     if (score > highest_score):
                         highest_score = score
                         best_move = child.move
                 depth += 1
             except:
+                #print("Depth, ", depth)
                 timeout = True
         return best_move
 
-    def alphabeta(self, node, alpha, beta, depth, start_time, hash_table):
-        score = 0
-        new_children = node.compute_and_get_children()
+    def alphabeta(self, node, alpha, beta, depth, start_time, seen_moves):
+
+        # Check if the time is up or if the depth limit is reached
+        if depth == 0 or (time.time() - start_time) > 0.055:
+            if depth == 0:
+                return self.heuristics(node)
+            else:
+                raise TimeoutError
+
+        # Check if Max player we won early
+        if self.game_check(node.state) == 1:
+            return math.inf
+    
+        # Check if Min player won early
+        elif self.game_check(node.state) == -1:
+            return -math.inf
+
         # Terminal node
-        if depth == 0 or len(node.children) == 0:
+        new_children = node.compute_and_get_children()
+        if (len(new_children) == 0):
             score = self.heuristics(node)
             return score
-
-        elif time.time() - start_time > 0.05:
-            raise TimeoutError
-
+        """"
         # If we have seen this state before in a deeper branch we can use the score from that branch
         key = self.hasher(node.state)
-        if key in hash_table and hash_table[key][0] >= depth:
-            return hash_table[key][1]
+        if key in seen_moves and seen_moves[key][0] >= depth:
+            return seen_moves[key][1]
         """
-        Steg 1 --> Checka om den finns med i hash tabellen
-        Steg 2 --> Om den finns med i hash tabellen, returnera värdet
-        Steg 3 --> Om den inte finns med i hash tabellen, fortsätt
-        Steg 4 --> Lägg till den i hash tabellen med värdet
-        """
+
+        score = 0
         state = node.state
         # Maximizing player
         if state.player == 0:
             score = -math.inf
             for child in new_children:
                 score = max(score, self.alphabeta(
-                    child, alpha, beta, depth-1, start_time, hash_table))
+                    child, alpha, beta, depth-1, start_time, seen_moves))
                 alpha = max(alpha, score)
                 if beta <= alpha:
                     break
@@ -134,12 +145,12 @@ class PlayerControllerMinimax(PlayerController):
             score = math.inf
             for child in new_children:
                 score = min(score, self.alphabeta(
-                    child, alpha, beta, depth-1, start_time, hash_table))
+                    child, alpha, beta, depth-1, start_time, seen_moves))
                 beta = min(beta, score)
                 if beta <= alpha:
                     break
 
-        hash_table.update({key: [depth, score]})
+        seen_moves.update({key: [depth, score]})
         return score
 
     # heuristics that evaluates the score of a state
@@ -150,10 +161,8 @@ class PlayerControllerMinimax(PlayerController):
         """
         # Different
         diff = node.state.player_scores[0] - node.state.player_scores[1]
-        max_score = -math.inf
-        min_score = -math.inf
-        max_temp = 0
-        min_temp = 0
+        max_score = 0
+        min_score = 0
 
         # Get the fish score of every fish
         for fish in node.state.fish_positions.keys():
@@ -171,25 +180,54 @@ class PlayerControllerMinimax(PlayerController):
 
             # Get the value per distance for the fishes for MAX player
             if distance_max == 0:
-                max_temp = fish_score * 2
+                max_score = max_score + fish_score * 2
             else:
-                max_temp = fish_score / distance_max
+                max_score = max_score + (fish_score / distance_max)
 
             # Get the value per distance for the fishes for MIN player
             if distance_min == 0:
-                min_temp = fish_score
+                min_score = min_score + fish_score * 2
             else:
-                min_temp = fish_score / distance_min
-
-            # Pick the best value for MAX and MIN player
-            if (max_temp > max_score):
-                max_score = max_temp
-            if (min_temp > min_score):
-                min_score = min_temp
+                min_score = min_score + (fish_score / distance_min)
 
         # Player with the best score wins
         # SE HÄR
         return diff + (max_score-min_score)
+
+    def game_check(self, state):
+        """
+        @param state: game state
+        @return: True if the game is over
+        """
+        remaining_fish_sum = 0
+        fish_scores = state.fish_scores
+
+        Max_score = state.player_scores[0]
+        Max_hook = state.hook_positions[0]
+
+        Min_score = state.player_scores[1]
+        Min_hook = state.hook_positions[1]
+
+        fish_score = 0
+        # If a hook is on a fish -> just add it to the score
+        for fish_id, fish_pos in state.fish_positions.items():
+            fish_score = fish_scores[fish_id]
+            if (fish_pos == Max_hook):
+                Max_score += fish_score
+            elif (fish_pos == Min_hook):
+                Min_score += fish_score
+            else:
+                remaining_fish_sum += fish_score
+
+        # These are the remaining fishes and the scores.
+        # If the difference between the scores is greater than the sum of the remaining fishes --> We lost or won
+        if (Max_score - Min_score) > remaining_fish_sum:
+            return 1
+        elif (Min_score - Max_score) > remaining_fish_sum:
+            return -1
+        # Else nothing happens and we continue
+        else:
+            return 0
 
     # Get the distance between the fish and the players
     def manhattan_distance(self, pos1, pos2):
@@ -201,7 +239,6 @@ class PlayerControllerMinimax(PlayerController):
         y = abs(pos1[1] - pos2[1])
         x1 = abs(pos1[0] - pos2[0])
         x = min(x1, 20 - x1)
-
         return x + y
 
     def hasher(self, state):
@@ -209,14 +246,5 @@ class PlayerControllerMinimax(PlayerController):
         @Param state: current state
         @return: Key in hash_table
         """
-        # Hook positions - fishscores - x-y positions of a fish
-        accumulator = ""
-        for fish in state.fish_positions.keys():
-            # Get the fish sore and position
-            fish_score = state.fish_scores[fish]
-            fish_pos = state.fish_positions[fish]
-            x = fish_pos[0]
-            y = fish_pos[1]
-            accumulator += "-" + str(fish_score) + "-" + str(x) + "-" + str(y)
-        accumulator = str(state.hook_positions) + accumulator
-        return accumulator
+        x = str(state.hook_positions) + str(state.fish_positions)
+        return x
