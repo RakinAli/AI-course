@@ -113,12 +113,7 @@ class PlayerControllerMinimax(PlayerController):
         key = self.hasher(node.state)
         if key in hash_table and hash_table[key][0] >= depth:
             return hash_table[key][1]
-        """
-        Steg 1 --> Checka om den finns med i hash tabellen
-        Steg 2 --> Om den finns med i hash tabellen, returnera värdet
-        Steg 3 --> Om den inte finns med i hash tabellen, fortsätt
-        Steg 4 --> Lägg till den i hash tabellen med värdet
-        """
+        
         state = node.state
         # Maximizing player
         if state.player == 0:
