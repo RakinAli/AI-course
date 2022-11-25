@@ -96,6 +96,7 @@ class PlayerControllerMinimax(PlayerController):
                 depth += 1
             except:
                 timeout = True
+                print("Depth: ", depth)
         return best_move
 
     def alphabeta(self, node, alpha, beta, depth, start_time, hash_table):
@@ -114,22 +115,32 @@ class PlayerControllerMinimax(PlayerController):
         if key in hash_table and hash_table[key][0] >= depth:
             return hash_table[key][1]
         
+        # Killer move heuristic 
+        current_scores = []
+        for i in range(len(new_children)):
+            current_scores.append(self.heuristics(new_children[i]))        
+        # Sort the array child_score based of score however store only the index values of the scores 
+        move_order = sorted(range(len(current_scores)),
+                            key=current_scores.__getitem__)
+        
         state = node.state
         # Maximizing player
         if state.player == 0:
             score = -math.inf
-            for child in new_children:
+            for i in move_order[::-1]:
+                current_child = new_children[i]
                 score = max(score, self.alphabeta(
-                    child, alpha, beta, depth-1, start_time, hash_table))
+                    current_child, alpha, beta, depth-1, start_time, hash_table))
                 alpha = max(alpha, score)
                 if beta <= alpha:
                     break
         # Minimizing player
         else:
             score = math.inf
-            for child in new_children:
+            for i in move_order:
+                current_child = new_children[i]
                 score = min(score, self.alphabeta(
-                    child, alpha, beta, depth-1, start_time, hash_table))
+                    current_child, alpha, beta, depth-1, start_time, hash_table))
                 beta = min(beta, score)
                 if beta <= alpha:
                     break
