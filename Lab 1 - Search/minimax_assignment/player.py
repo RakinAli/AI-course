@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import random
 import math
+import time
 
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
@@ -80,40 +81,71 @@ class PlayerControllerMinimax(PlayerController):
         children = node.compute_and_get_children()
         best_move = 0
         highest_score = -math.inf
-        for child in children:
-            score = self.alphabeta(child, -math.inf, math.inf, 2)
-            if (score > highest_score):
-                highest_score = score
-                best_move = child.move
+        timeout = False
+        start_time = time.time()
+        depth = 0
+        hash_table = dict()
+        while not timeout:
+            try:
+                for child in children:
+                    score = self.alphabeta(
+                        child, -math.inf, math.inf, depth, start_time, hash_table)
+                    if (score > highest_score):
+                        highest_score = score
+                        best_move = child.move
+                depth += 1
+            except:
+                timeout = True
+                print("Depth: ", depth)
         return best_move
 
-    def alphabeta(self, node, alpha, beta, depth):
+    def alphabeta(self, node, alpha, beta, depth, start_time, hash_table):
         score = 0
-
         new_children = node.compute_and_get_children()
-        
         # Terminal node
         if depth == 0 or len(node.children) == 0:
             score = self.heuristics(node)
             return score
 
+        elif time.time() - start_time > 0.057:
+            raise TimeoutError
+
+        # If we have seen this state before in a deeper branch we can use the score from that branch
+        key = self.hasher(node.state)
+        if key in hash_table and hash_table[key][0] >= depth:
+            return hash_table[key][1]
+
+        # Killer move heuristic
+        current_scores = []
+        for i in range(len(new_children)):
+            current_scores.append(self.heuristics(new_children[i]))
+        # Sort the array child_score based of score however store only the index values of the scores
+        move_order = sorted(range(len(current_scores)),
+                            key=current_scores.__getitem__)
+
         state = node.state
         # Maximizing player
         if state.player == 0:
             score = -math.inf
-            for child in new_children:
-                score = max(score, self.alphabeta(child, alpha, beta, depth-1))
+            for i in move_order[::-1]:
+                current_child = new_children[i]
+                score = max(score, self.alphabeta(
+                    current_child, alpha, beta, depth-1, start_time, hash_table))
                 alpha = max(alpha, score)
                 if beta <= alpha:
                     break
         # Minimizing player
         else:
             score = math.inf
-            for child in new_children:
-                score = min(score, self.alphabeta(child, alpha, beta, depth-1))
+            for i in move_order:
+                current_child = new_children[i]
+                score = min(score, self.alphabeta(
+                    current_child, alpha, beta, depth-1, start_time, hash_table))
                 beta = min(beta, score)
                 if beta <= alpha:
                     break
+
+        hash_table.update({key: [depth, score]})
         return score
 
     # heuristics that evaluates the score of a state
@@ -177,3 +209,20 @@ class PlayerControllerMinimax(PlayerController):
         x = min(x1, 20 - x1)
 
         return x + y
+
+    def hasher(self, state):
+        """
+        @Param state: current state
+        @return: Key in hash_table
+        """
+        # Hook positions - fishscores - x-y positions of a fish
+        accumulator = ""
+        for fish in state.fish_positions.keys():
+            # Get the fish sore and position
+            fish_score = state.fish_scores[fish]
+            fish_pos = state.fish_positions[fish]
+            x = fish_pos[0]
+            y = fish_pos[1]
+            accumulator += "-" + str(fish_score) + "-" + str(x) + "-" + str(y)
+        accumulator = str(state.hook_positions) + accumulator
+        return accumulator
