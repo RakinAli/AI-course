@@ -107,22 +107,22 @@ class PlayerControllerMinimax(PlayerController):
             score = self.heuristics(node)
             return score
 
-        elif time.time() - start_time > 0.05:
+        elif time.time() - start_time > 0.057:
             raise TimeoutError
 
         # If we have seen this state before in a deeper branch we can use the score from that branch
         key = self.hasher(node.state)
         if key in hash_table and hash_table[key][0] >= depth:
             return hash_table[key][1]
-        
-        # Killer move heuristic 
+
+        # Killer move heuristic
         current_scores = []
         for i in range(len(new_children)):
-            current_scores.append(self.heuristics(new_children[i]))        
-        # Sort the array child_score based of score however store only the index values of the scores 
+            current_scores.append(self.heuristics(new_children[i]))
+        # Sort the array child_score based of score however store only the index values of the scores
         move_order = sorted(range(len(current_scores)),
                             key=current_scores.__getitem__)
-        
+
         state = node.state
         # Maximizing player
         if state.player == 0:
