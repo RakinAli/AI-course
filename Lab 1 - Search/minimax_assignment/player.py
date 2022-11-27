@@ -85,9 +85,11 @@ class PlayerControllerMinimax(PlayerController):
         start_time = time.time()
         depth = 0
         hash_table = dict()
+        # Get the hook positions for player
+        start_pos = node.state.hook_positions[0]
         while not timeout:
             try:
-                for child in children:
+                for child in children:       
                     score = self.alphabeta(
                         child, -math.inf, math.inf, depth, start_time, hash_table)
                     if (score > highest_score):
@@ -97,7 +99,7 @@ class PlayerControllerMinimax(PlayerController):
             except:
                 timeout = True
                 print("Depth: ", depth)
-        return best_move
+        return best_move    
 
     def alphabeta(self, node, alpha, beta, depth, start_time, hash_table):
         score = 0
@@ -115,7 +117,8 @@ class PlayerControllerMinimax(PlayerController):
         if key in hash_table and hash_table[key][0] >= depth:
             return hash_table[key][1]
 
-        # Killer move heuristic
+        # MAX wants to get a good beta score. Min wants to get a bad alpha score.
+        # If we find a really good alpha score early on then we can prune alot
         current_scores = []
         for i in range(len(new_children)):
             current_scores.append(self.heuristics(new_children[i]))
@@ -134,6 +137,7 @@ class PlayerControllerMinimax(PlayerController):
                 alpha = max(alpha, score)
                 if beta <= alpha:
                     break
+
         # Minimizing player
         else:
             score = math.inf
@@ -161,7 +165,7 @@ class PlayerControllerMinimax(PlayerController):
         max_temp = 0
         min_temp = 0
 
-        # Get the fish score of every fish
+        # Get the fish score/distance of every fish and find the best one
         for fish in node.state.fish_positions.keys():
             # Get the fish sore and position
             fish_score = node.state.fish_scores[fish]
@@ -183,7 +187,7 @@ class PlayerControllerMinimax(PlayerController):
 
             # Get the value per distance for the fishes for MIN player
             if distance_min == 0:
-                min_temp = fish_score
+                min_temp = fish_score * 2 
             else:
                 min_temp = fish_score / distance_min
 
