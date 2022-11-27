@@ -89,7 +89,7 @@ class PlayerControllerMinimax(PlayerController):
         start_pos = node.state.hook_positions[0]
         while not timeout:
             try:
-                for child in children:       
+                for child in children:
                     score = self.alphabeta(
                         child, -math.inf, math.inf, depth, start_time, hash_table)
                     if (score > highest_score):
@@ -98,8 +98,8 @@ class PlayerControllerMinimax(PlayerController):
                 depth += 1
             except:
                 timeout = True
-                print("Depth: ", depth)
-        return best_move    
+                #print("Depth: ", depth)
+        return best_move
 
     def alphabeta(self, node, alpha, beta, depth, start_time, hash_table):
         score = 0
@@ -176,8 +176,8 @@ class PlayerControllerMinimax(PlayerController):
             hook_min = node.state.hook_positions[1]
 
             # Get the distances between the fish and the hooks
-            distance_max = self.manhattan_distance(fish_pos, hook_max)
-            distance_min = self.manhattan_distance(fish_pos, hook_min)
+            distance_max, distance_min = self.manhattan_distance(
+                hook_max, hook_min, fish_pos)
 
             # Get the value per distance for the fishes for MAX player
             if distance_max == 0:
@@ -187,7 +187,7 @@ class PlayerControllerMinimax(PlayerController):
 
             # Get the value per distance for the fishes for MIN player
             if distance_min == 0:
-                min_temp = fish_score * 2 
+                min_temp = fish_score
             else:
                 min_temp = fish_score / distance_min
 
@@ -202,17 +202,40 @@ class PlayerControllerMinimax(PlayerController):
         return diff + (max_score-min_score)
 
     # Get the distance between the fish and the players
-    def manhattan_distance(self, pos1, pos2):
+    def manhattan_distance(self, player, opponent, fish):
         """
-        @param pos1: position of the fish
-        @param pos2: position of the player
-        @return: distance between the fish and the player"""
+        @param1 player
+        @param2 opponent
+        @param3 fish
+        @return: Distance between fish and the players """
 
-        y = abs(pos1[1] - pos2[1])
-        x1 = abs(pos1[0] - pos2[0])
-        x = min(x1, 20 - x1)
+        player_x = player[0]
+        player_y = player[1]
+        opponent_x = opponent[0]
+        opponent_y = opponent[1]
+        fish_x = fish[0]
+        fish_y = fish[1]
 
-        return x + y
+        # If opponent is blocking our way to the fish, we have to take the other route
+        if (player_x < opponent_x <= fish_x) or (fish_x <= opponent_x < player_x):
+            # we have to take the other route
+            player_x = 20 - abs(fish_x - player_x)
+            opponent_x = abs(fish_x-opponent_x)  # direct distance to fish
+
+        # If we are blockig the opponent, they have to take the other route
+        elif (opponent_x < player_x <= fish_x) or (fish_x <= player_x < opponent_x):
+            # they have to take the other route
+            opponent_x = 20 - abs(opponent_x-fish_x)
+            player_x = abs(fish_x-player_x)  # direct distance to fish
+
+        # Get Y distance-  straightforward
+        player_y = abs(player_y - fish_y)
+        opponent_y = abs(opponent_y - fish_y)
+
+        player_dist = player_x + player_y
+        opponent_dist = opponent_x + opponent_y
+
+        return player_dist, opponent_dist
 
     def hasher(self, state):
         """
