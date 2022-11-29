@@ -1,9 +1,9 @@
 # Observations file
 # Checkar heuristic
-#observations_file: "observations/test_0.json"
+observations_file: "observations/test_0.json"
 
 # Checkar vem som är snabbast
-observations_file: "observations/test_1.json"
+#observations_file: "observations/test_1.json"
 
 #observations_file: "observations/test_2.json"
 #observations_file: "observations/test_3.json"

@@ -84,22 +84,20 @@ class PlayerControllerMinimax(PlayerController):
         timeout = False
         start_time = time.time()
         depth = 0
-        hash_table = dict()
         while not timeout:
             try:
                 for child in children:
                     score = self.alphabeta(
-                        child, -math.inf, math.inf, depth, start_time, hash_table)
+                        child, -math.inf, math.inf, depth, start_time)
                     if (score > highest_score):
                         highest_score = score
                         best_move = child.move
                 depth += 1
             except:
                 timeout = True
-                print("Depth: ", depth)
         return best_move
 
-    def alphabeta(self, node, alpha, beta, depth, start_time, hash_table):
+    def alphabeta(self, node, alpha, beta, depth, start_time):
         score = 0
         new_children = node.compute_and_get_children()
         # Terminal node
@@ -107,45 +105,28 @@ class PlayerControllerMinimax(PlayerController):
             score = self.heuristics(node)
             return score
 
-        elif time.time() - start_time > 0.057:
+        elif time.time() - start_time > 0.05:
             raise TimeoutError
-
-        # If we have seen this state before in a deeper branch we can use the score from that branch
-        key = self.hasher(node.state)
-        if key in hash_table and hash_table[key][0] >= depth:
-            return hash_table[key][1]
-
-        # Killer move heuristic
-        current_scores = []
-        for i in range(len(new_children)):
-            current_scores.append(self.heuristics(new_children[i]))
-        # Sort the array child_score based of score however store only the index values of the scores
-        move_order = sorted(range(len(current_scores)),
-                            key=current_scores.__getitem__)
 
         state = node.state
         # Maximizing player
         if state.player == 0:
             score = -math.inf
-            for i in move_order[::-1]:
-                current_child = new_children[i]
+            for child in new_children:
                 score = max(score, self.alphabeta(
-                    current_child, alpha, beta, depth-1, start_time, hash_table))
+                    child, alpha, beta, depth-1, start_time))
                 alpha = max(alpha, score)
                 if beta <= alpha:
                     break
         # Minimizing player
         else:
             score = math.inf
-            for i in move_order:
-                current_child = new_children[i]
+            for child in new_children:
                 score = min(score, self.alphabeta(
-                    current_child, alpha, beta, depth-1, start_time, hash_table))
+                    child, alpha, beta, depth-1, start_time))
                 beta = min(beta, score)
                 if beta <= alpha:
                     break
-
-        hash_table.update({key: [depth, score]})
         return score
 
     # heuristics that evaluates the score of a state
@@ -172,7 +153,8 @@ class PlayerControllerMinimax(PlayerController):
             hook_min = node.state.hook_positions[1]
 
             # Get the distances between the fish and the hooks
-            distance_max, distance_min = self.manhattan_distance(hook_max, hook_min, fish_pos)
+            distance_max = self.manhattan_distance(fish_pos, hook_max)
+            distance_min = self.manhattan_distance(fish_pos, hook_min)
 
             # Get the value per distance for the fishes for MAX player
             if distance_max == 0:
@@ -197,57 +179,14 @@ class PlayerControllerMinimax(PlayerController):
         return diff + (max_score-min_score)
 
     # Get the distance between the fish and the players
-    def manhattan_distance(self, player, opponent, fish):
+    def manhattan_distance(self, pos1, pos2):
         """
-        @param1 player
-        @param2 opponent
-        @param3 fish
-        @return: Distance between fish and the players """
+        @param pos1: position of the fish
+        @param pos2: position of the player
+        @return: distance between the fish and the player"""
 
-        player_x = player[0]
-        player_y = player[1]
-        opponent_x = opponent[0]
-        opponent_y = opponent[1]
-        fish_x = fish[0]
-        fish_y = fish[1]
-        
-        # If opponent is blocking our way to the fish, we have to take the other route
-        if(player_x < opponent_x <= fish_x) or (fish_x <= opponent_x < player_x):
-            player_x = 20 - abs(fish_x - player_x) # we have to take the other route
-            opponent_x= abs(fish_x-opponent_x) # direct distance to fish
+        y = abs(pos1[1] - pos2[1])
+        x1 = abs(pos1[0] - pos2[0])
+        x = min(x1, 20 - x1)
 
-        # If we are blockig the opponent, they have to take the other route
-        elif (opponent_x < player_x <= fish_x) or (fish_x <= player_x < opponent_x):
-            opponent_x = 20 - abs(opponent_x-fish_x) # they have to take the other route
-            player_x = abs(fish_x-player_x) # direct distance to fish
-
-        
-        # Get Y distance-  straightforward
-        player_y = abs(player_y - fish_y)
-        opponent_y = abs(opponent_y - fish_y)
-        
-        player_dist = player_x + player_y
-        opponent_dist = opponent_x + opponent_y
-        return player_dist, opponent_dist
-
-
-
-
-    
-
-    def hasher(self, state):
-        """
-        @Param state: current state
-        @return: Key in hash_table
-        """
-        # Hook positions - fishscores - x-y positions of a fish
-        accumulator = ""
-        for fish in state.fish_positions.keys():
-            # Get the fish sore and position
-            fish_score = state.fish_scores[fish]
-            fish_pos = state.fish_positions[fish]
-            x = fish_pos[0]
-            y = fish_pos[1]
-            accumulator += "-" + str(fish_score) + "-" + str(x) + "-" + str(y)
-        accumulator = str(state.hook_positions) + accumulator
-        return accumulator
+        return x + y
