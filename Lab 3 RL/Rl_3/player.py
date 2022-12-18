@@ -101,6 +101,9 @@ def epsilon_greedy(Q,
         # Implemenmt the epsilon-greedy algorithm for a constant epsilon value
         # Use epsilon and all input arguments of epsilon_greedy you see fit
         # It is recommended you use the np.random module
+        
+
+
         action = None
         # ADD YOUR CODE SNIPPET BETWEEN EX 3.1
 
