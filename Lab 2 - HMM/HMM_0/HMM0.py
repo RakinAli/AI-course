@@ -1,6 +1,9 @@
 def readInput():
+  # Moving from one state to another, the probability of that happening
   transition_matrix = []
+  # The probability of a certain emission given a certain state
   emission_matrix = []
+  # The probability of starting in a certain state
   initial_probabilities = []
   for x in input().split():
     transition_matrix.append(float(x))
@@ -38,7 +41,8 @@ def main():
 
   # Creating transitions tables 
   first_transitions = matrix_multiplication(initial_probabilities, transition_matrix)
-  # Transitions table 
+  
+  # Creating emission tables
   probabilities_matrix = matrix_multiplication(first_transitions, emission_matrix)
 
   # Rounding the results 

@@ -65,7 +65,7 @@ def alpha_pass(transitions_matrix, emission_matrix, pi_matrix, emission_elements
   # Scale alpha matrix for first observation like Mark Stamp (A Reavaling introduction to Hidden Markov Models)
   scale[0]  = (1/scale[0])
   for state in range(total_states):
-    alpha[state][0] = scale[0] * alpha[state][0]
+    alpha[state][0] = scale[0] * alpha[state][0] # Scaling the rest of 
   
   # Calculate alpha matrix for all observations
   for observation in range(1, total_observations):
@@ -178,13 +178,15 @@ def re_estimate_model_parameters(gamma, di_gamma, transitions_matrix, emission_m
   # Re-estimate the emission probabilities
   for from_state in range(total_states):
     denominator = 0
+    # Calculate the denominator for the emission probabilities --> 
     for observation in range(total_observation):
       # Calculate the denominator for the emission probabilities
       denominator += gamma[from_state][observation]
+    # Calculate the emission probabilities for each emission in the emission matrix 
     for emission in range(len(emission_matrix[0])):
       numerator = 0
       for observation in range(total_observation):
-        # Check if the emission is the same as the observation
+        # Being in a state and emitting a certain emission
         if emission_elements[observation] == emission:
           numerator += gamma[from_state][observation]
       # Calculate the emission probabilities
@@ -230,6 +232,7 @@ def learning_algorithm(transitions_matrix, emission_matrix, pi_matrix, emission_
 
     if probability > log_prob:
       log_prob = probability
+      print("Iteration: " + str(iteration) + " Log likelyhood: " + str(log_prob))
     else:
       break
 
@@ -240,8 +243,6 @@ def answer(matrix):
   for row in matrix:
     for element in row:
       print(round(element, 6), end=" ") 
-  
-
 
 def main():
   # Start by reading all inputs

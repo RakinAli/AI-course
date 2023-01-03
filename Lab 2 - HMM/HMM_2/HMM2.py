@@ -42,14 +42,14 @@ def viterbi_algorithm(transition_matrix, emission_matrix, initial_probabilities,
     for state in range(total_states): 
       # Current_State = Where we were in the previous observation
       # [State] = The state we are heading to
+      # Finding the most probable path and the probability of that path in the T1 matrix for the current observation
       T1[observation][state] = max(T1[observation-1][current_state] * transition_matrix[current_state][state] * emission_matrix[state][emissions_sequence[observation]] for current_state in range(total_states))
+      # Finding the most probable state in the previous observation
       T2[observation][state] = max((T1[observation-1][current_state] * transition_matrix[current_state][state] * emission_matrix[state][emissions_sequence[observation]], current_state) for current_state in range(total_states))[1]
     
   # Finding the most probable sequence of hidden states
   hidden_states = [0 for x in range(total_observations)] # Initializing the hidden states as zeros in a list
-  hidden_states[total_observations-1] = max( (T1[total_observations-1][i], i) for i in range(total_states))[1]  # Finding the most probable state in the last observation
-  
- 
+  hidden_states[total_observations-1] = max((T1[total_observations-1][i], i) for i in range(total_states))[1]  # Finding the most probable state in the last observation
   for t in range(total_observations-2, -1, -1): 
     hidden_states[t] = T2[t+1][hidden_states[t+1]] # Pick the state with the highest probability in the previous observation and add it to the list of hidden states
   return hidden_states
@@ -69,3 +69,15 @@ def main():
 
 if __name__ == "__main__":
   main()
+
+
+# A -- C 
+
+  # T1[0] = Sannorlikheten för A
+  # T1[1] = Sannorlikheten för C
+
+  #T2[0]= Error
+  #T2[1]= A 
+
+
+

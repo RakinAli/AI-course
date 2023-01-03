@@ -41,8 +41,13 @@ def forward_algorithm(transition_matrix, emission_matrix, initial_probabilities,
   for t in range(1, T):
     for i in range(N):
       for j in range(N):
-        alpha[i][t] += alpha[j][t-1] * transition_matrix[j][i] * emission_matrix[i][emissions_sequence[t]]  
+        alpha[i][t] += alpha[j][t-1] * transition_matrix[j][i] * emission_matrix[i][emissions_sequence[t]]        
+        
   # Summation
+  print("Alpha")
+  print("")
+  print(alpha)
+
   answer = 0
   for i in range(N):
     answer += alpha[i][T-1]
@@ -64,3 +69,6 @@ def main():
 
 if __name__ == "__main__":
   main()
+
+
+  
