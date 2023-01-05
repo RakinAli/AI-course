@@ -148,6 +148,7 @@ class PlayerControllerRL(PlayerController, FishesModelling):
         print("Q-learning returning")
         return
 
+    # This function is used to compute the policy from the Q-table (q) computed by Q-learning algorithm (q_learning) function below 
     def q_learning(self):
         ns = len(self.state2ind.keys())
         na = len(self.actions.keys())
@@ -160,12 +161,14 @@ class PlayerControllerRL(PlayerController, FishesModelling):
         Q = np.random.uniform(0, 1, (ns, na))
         # ADD YOUR CODE SNIPPET BETWEEN EX. 2.1
 
+        # Here we set the Q values for the states that are not allowed to be visited to nan
         for s in range(ns):
             list_pos = self.allowed_moves[s]
             for i in range(4):
                 if i not in list_pos:
                     Q[s, i] = np.nan
 
+        # Q_old is used to compute the difference between the Q tables
         Q_old = Q.copy()
 
         diff = np.infty

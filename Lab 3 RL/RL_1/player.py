@@ -270,6 +270,7 @@ class PlayerControllerRandom(PlayerController):
         print("Random Agent returning")
         return
 
+    # This function is used to compute the policy from the number of times each action was taken in each state (n)
     def random_agent(self):
         ns = len(self.state2ind.keys())
         na = len(self.actions.keys())
@@ -321,6 +322,7 @@ class PlayerControllerRandom(PlayerController):
 
         return n
 
+    # This function get_policy is used to compute the policy from the number of times each action was taken in each state (n) and the Q matrix from the Bellman update equation
     def get_policy(self, Q):
         nan_max_actions_proxy = [None for _ in range(len(Q))]
         for _ in range(len(Q)):
