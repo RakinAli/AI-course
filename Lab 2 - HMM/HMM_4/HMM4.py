@@ -1,7 +1,7 @@
 import math
 
 # Reads user input
-def readInput():
+def readsInput():
 
   transition_matrix_guess = []
   emission_matrix_guess = []
@@ -9,16 +9,16 @@ def readInput():
   emissions_sequence_guess = []
   for x in input().split():
     transition_matrix_guess.append(float(x))
-  print("Done reading transition matrix")
+  print("Transiton Matrix:" ,transition_matrix_guess)
   for x in input().split():
     emission_matrix_guess.append(float(x))
-  print("Done reading emission matrix")
+  print("Emission Matrix:" ,emission_matrix_guess)
   for x in input().split():
     initial_probabilities_guess.append(float(x))
-  print("Done reading initial probabilities")
+  print("Initial Probabilities:" ,initial_probabilities_guess)
   for x in input().split():
     emissions_sequence_guess.append(int(x))
-  print("Done reading emissions sequence")
+  print("Emissions Sequence:" ,emissions_sequence_guess)
   return transition_matrix_guess, emission_matrix_guess, initial_probabilities_guess, emissions_sequence_guess
 
 # Creates matrix from input
@@ -237,8 +237,8 @@ def learning_algorithm(transitions_matrix, emission_matrix, pi_matrix, emission_
       log_prob = probability
     else:
       break
-  
-    print("Iteration: " + str(iteration) + " Log likelyhood: " + str(log_prob))
+    if iteration % 100 == 0:
+      print("Iteration: " + str(iteration) + " Log likelyhood: " + str(log_prob))
 
   return transition_new, emission_new
 
@@ -250,21 +250,21 @@ def answer(matrix):
 
 def main():
   # Start by reading all inputs
-  print("Hello world")
-  A_guess, B_guess, pi_guess, emission_sequence = readInput()
-  print("Before learning:")
+  A_guess, B_guess, pi_guess, emission_sequence = readsInput()
+  print("Done reading input")
 
   # Now create the matrices
   transitions_matrix = create_matrix(A_guess)
   emission_matrix = create_matrix(B_guess)
   pi_matrix = create_matrix(pi_guess)
-  emission_elements = emission_sequence[995:]
-  transition_output, emission_output  = learning_algorithm(transitions_matrix, emission_matrix, pi_matrix, emission_elements, 100)
+  emission_elements = emission_sequence[1:]
+  transition_output, emission_output  = learning_algorithm(transitions_matrix, emission_matrix, pi_matrix, emission_elements, 10000)
 
   # Print the output
-  print("Anwser:")
+  print("Answer:")
   answer(transition_output)
   print()
+  answer(emission_output)
 
 
 main()
