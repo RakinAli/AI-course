@@ -157,12 +157,10 @@ class FishingDerbyRLApp(App, SettingLoader, Communicator, PrintScore1Player):
             self.main_widget.ids.diver_layout.add_widget(diver)
         self.player.diver = diver
 
-    # This function is used to initialize the state space and the state2ind and ind2state dictionaries used to convert the state into an index for the Q-table and the policy table (if any) in the player class
     def init_states(self):
-        # Subdivisions of the space in order to discretize the state space (x, y) -> state.
         subdivisions = self.space_subdivisions
-        state2ind = {} 
-        ind2state = {} # This is used to convert the state index into a tuple of (x, y) coordinates for the position changing process
+        state2ind = {}
+        ind2state = {}
         state = 0
         for i in range(subdivisions):
             for j in range(subdivisions):
@@ -172,12 +170,7 @@ class FishingDerbyRLApp(App, SettingLoader, Communicator, PrintScore1Player):
         self.state2ind = state2ind
         self.ind2state = ind2state
 
-        # x = 1, y = 6 
-        # self_index2state[16]
-
-    # init actions and actions2ind are used to convert the action into an index for the Q-table and the policy table (if any) in the player class
     def init_actions(self):
-        # actions is used to convert the action index into a tuple of (x, y) coordinates for the position changing process
         self.actions = {
             "left": (-1, 0),
             "right": (1, 0),
@@ -185,7 +178,6 @@ class FishingDerbyRLApp(App, SettingLoader, Communicator, PrintScore1Player):
             "up": (0, 1),
             "stay": (0, 0)
         }
-        # actions2ind is used to convert the action into an index for the Q-table and the policy table (if any) in the player class
         self.actions2ind = {
             "left": 0,
             "right": 1,
@@ -360,30 +352,23 @@ class FishingDerbyRLApp(App, SettingLoader, Communicator, PrintScore1Player):
         next_state = (state[0] + action_tuple[0], state[1] + action_tuple[1])
         return next_state
 
-    """This function computes the reward given a state and an action and returns the reward and a boolean that indicates if the state is final or not. If the state is final, the episode ends.   """
     def step(self, action):
-        # ind_action is the index of the action in the action space (0, 1, 2, 3) and not the action itself (0, 1, 2, 3, 4, 5, 6, 7)
         ind_action = self.actions2ind[self.action]
         current_state = self.player.diver.position.x, self.player.diver.position.y
-
         ind_state = self.ind2state[current_state]
-        # If the action is not possible, the reward is -100 and the state is not final (the episode continues) and the state is not changed (the diver stays in the same position) 
         if not self.player.diver.model[ind_state, ind_action]:
             reward = -100
             final_state = False
             return reward, final_state
         else:
-            # If the action is possible, the reward is calculated and the state is not final (the episode continues) and the state is changed (the diver moves to the next state)
             next_state_x, next_state_y = self.next_state(current_state, action)
             next_state = next_state_x, next_state_y
-            # change the position of the diver in the game (the position is changed in the game but not in the model)
             self.player.diver.position.set_x(next_state_x)
             self.player.diver.position.set_y(next_state_y)
 
         reward, final_state = self.compute_reward(next_state)
         return reward, final_state
 
-    # Returns the reward and a boolean that indicates if the state is final or not. If the state is final, the episode ends.
     def compute_reward(self, next_state):
         next_state_x, next_state_y = next_state
         reward = self.settings.rewards[-1]  #changed from 0....

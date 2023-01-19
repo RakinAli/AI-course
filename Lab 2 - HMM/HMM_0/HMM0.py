@@ -36,7 +36,7 @@ def main():
   trans_input, emis_inpus, init_input = readInput()
 
   transition_matrix = create_matrix(trans_input)
-  emission_matrix = create_matrix(emis_inpus)
+  emission_matrix = create_matrix(emis_inpus) 
   initial_probabilities = create_matrix(init_input)
 
   # Creating transitions tables 
@@ -51,7 +51,7 @@ def main():
   
   # Printing the results
   stringRows = str(len(first_transitions))
-  stringCols = str(len(emission_matrix[0]))
+  stringCols = str(len(emission_matrix[0])) 
   elementString = (" ".join(map(str, probabilities_matrix[0])))
   print(stringRows + " " + stringCols + " " + elementString) 
 

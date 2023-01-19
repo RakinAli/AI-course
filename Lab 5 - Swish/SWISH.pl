@@ -43,13 +43,13 @@ fact5(Ls) :-
     member(p(_, _, cleaning, _, basement), Ls).
 fact6(Ls) :-
 %   Fill here
-    member(p(_, _, _, full, ground), Ls), member(p(_, _, _, full, ground), Ls).
+    member(p(X,_,_,full,ground), Ls), member(p(Y,_,_,full,ground), Ls), (X \= Y).
 fact7(Ls) :-
 %   Fill here
     member(p(_, 190, beverage, _, _), Ls).
 fact8(Ls) :-
 %   Fill here
-    member(p(_, _, _, part, _), Ls), member(p(_, _, _, part, _), Ls), not(member(p(w3, _, _, part, _), Ls)).
+    member(p(X,_,_,part,_), Ls), member(p(Y,_,_,part,_), Ls), (X \= Y), not(member(p(w3,_,_,part,_), Ls)). 
 fact9(Ls) :-
 %   Fill here
     member(p(_, 170, _, _, first), Ls).
@@ -84,4 +84,3 @@ waiters(Ls) :-
     !.
  
 %To see the results, run ?- waiters(Ls).
-

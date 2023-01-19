@@ -148,7 +148,6 @@ class PlayerControllerRL(PlayerController, FishesModelling):
         print("Q-learning returning")
         return
 
-    # This function is used to compute the policy from the Q-table (q) computed by Q-learning algorithm (q_learning) function below 
     def q_learning(self):
         ns = len(self.state2ind.keys())
         na = len(self.actions.keys())
@@ -158,17 +157,15 @@ class PlayerControllerRL(PlayerController, FishesModelling):
         self.allowed_movements()
         # ADD YOUR CODE SNIPPET BETWEEN EX. 2.1
         # Initialize a numpy array with ns state rows and na state columns with float values from 0.0 to 1.0.
-        Q = np.random.uniform(0, 1, (ns, na))
+        Q = None
         # ADD YOUR CODE SNIPPET BETWEEN EX. 2.1
 
-        # Here we set the Q values for the states that are not allowed to be visited to nan
         for s in range(ns):
             list_pos = self.allowed_moves[s]
             for i in range(4):
                 if i not in list_pos:
                     Q[s, i] = np.nan
 
-        # Q_old is used to compute the difference between the Q tables
         Q_old = Q.copy()
 
         diff = np.infty
@@ -185,7 +182,7 @@ class PlayerControllerRL(PlayerController, FishesModelling):
         # ADD YOUR CODE SNIPPET BETWEEN EX. 2.3
         # Change the while loop to incorporate a threshold limit, to stop training when the mean difference
         # in the Q table is lower than the threshold
-        while episode <= self.episode_max and diff > self.threshold:
+        while episode <= self.episode_max:
             # ADD YOUR CODE SNIPPET BETWEENEX. 2.3
 
             s_current = init_pos
@@ -197,7 +194,7 @@ class PlayerControllerRL(PlayerController, FishesModelling):
 
                 # ADD YOUR CODE SNIPPET BETWEEN EX 2.1 and 2.2
                 # Chose an action from all possible actions
-                action = np.nanargmax(Q[s_current, :])
+                action = None
                 # ADD YOUR CODE SNIPPET BETWEEN EX 2.1 and 2.2
 
                 # ADD YOUR CODE SNIPPET BETWEEN EX 5
@@ -212,7 +209,6 @@ class PlayerControllerRL(PlayerController, FishesModelling):
                 # wait response from game
                 msg = self.receiver()
                 R = msg["reward"]
-                # Here we add the reward to the total reward of the episode to compute the average reward
                 R_total += R
                 s_next_tuple = msg["state"]
                 end_episode = msg["end_episode"]
@@ -220,8 +216,7 @@ class PlayerControllerRL(PlayerController, FishesModelling):
 
                 # ADD YOUR CODE SNIPPET BETWEEN EX. 2.2
                 # Implement the Bellman Update equation to update Q
-                Q[s_current][action] = Q[s_current][action] + self.alpha*(R + self.gamma*np.nanmax(Q[s_next]) - Q[s_current][action])
-                # ADD YOUR CODE SNIPPET BETWEEN EX.3 2.2
+                # ADD YOUR CODE SNIPPET BETWEEN EX. 2.2
 
                 s_current = s_next
                 current_total_steps += 1
@@ -229,7 +224,7 @@ class PlayerControllerRL(PlayerController, FishesModelling):
 
             # ADD YOUR CODE SNIPPET BETWEEN EX. 2.3
             # Compute the absolute value of the mean between the Q and Q-old
-            diff = np.nanmean(abs(Q - Q_old))
+            diff = 100
             # ADD YOUR CODE SNIPPET BETWEEN EX. 2.3
             Q_old[:] = Q
             print(

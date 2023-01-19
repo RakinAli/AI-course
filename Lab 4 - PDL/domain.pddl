@@ -57,6 +57,7 @@
     (and 
         (party ?p) (room ?r) (day ?d)
         (is_current_day ?d) (has_reservation ?p ?r ?d) (is_vacant ?r) (is_clean ?r)
+    )
     
  :effect
     (and 

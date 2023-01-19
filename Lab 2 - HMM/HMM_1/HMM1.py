@@ -31,6 +31,7 @@ Product rule over "Emission given State" then sum them all together.
 def forward_algorithm(transition_matrix, emission_matrix, initial_probabilities, emissions_sequence):
   #Alpha[i]  is the probability of being in state i at time t and emitting the first t observations
   #Alpha[i][t]: t is the time and i is the state 
+  # Time complexity for forward algorithm is: LISTA UT DET SJÄLV
   alpha = [[0 for x in range(len(emissions_sequence))] for y in range(len(transition_matrix))]
   T = len(emissions_sequence)
   N = len(transition_matrix)
@@ -42,12 +43,7 @@ def forward_algorithm(transition_matrix, emission_matrix, initial_probabilities,
     for i in range(N):
       for j in range(N):
         alpha[i][t] += alpha[j][t-1] * transition_matrix[j][i] * emission_matrix[i][emissions_sequence[t]]        
-        
-  # Summation
-  print("Alpha")
-  print("")
-  print(alpha)
-
+  
   answer = 0
   for i in range(N):
     answer += alpha[i][T-1]
